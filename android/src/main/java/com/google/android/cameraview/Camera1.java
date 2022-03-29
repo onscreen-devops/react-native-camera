@@ -1584,23 +1584,24 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
         mMediaRecorder = new MediaRecorder();
         mCamera.unlock();
 
+        recordAudio = true;
+
         mMediaRecorder.setCamera(mCamera);
 
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
         if (recordAudio) {
             mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         }
-
-        mMediaRecorder.setOutputFile(path);
-        mVideoPath = path;
-
+        
         CamcorderProfile camProfile;
-        if (CamcorderProfile.hasProfile(mCameraId, profile.quality)) {
+
+        if (profile != null && CamcorderProfile.hasProfile(mCameraId, profile.quality)) {
             camProfile = CamcorderProfile.get(mCameraId, profile.quality);
+            camProfile.videoBitRate = profile.videoBitRate;
         } else {
-            camProfile = CamcorderProfile.get(mCameraId, CamcorderProfile.QUALITY_HIGH);
+            camProfile = CamcorderProfile.get(mCameraId, CamcorderProfile.QUALITY_720P);            
         }
-        camProfile.videoBitRate = profile.videoBitRate;
+        
         setCamcorderProfile(camProfile, recordAudio, fps);
 
         mMediaRecorder.setOrientationHint(calcCameraRotation(mOrientation != Constants.ORIENTATION_AUTO ? orientationEnumToRotation(mOrientation) : mDeviceOrientation));
@@ -1614,6 +1615,9 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
 
         mMediaRecorder.setOnInfoListener(this);
         mMediaRecorder.setOnErrorListener(this);
+
+        mMediaRecorder.setOutputFile(path);
+        mVideoPath = path;
 
     }
 
@@ -1688,6 +1692,9 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
 
     private void setCamcorderProfile(CamcorderProfile profile, boolean recordAudio, int fps) {
         int compatible_fps = isCompatibleWithDevice(fps) ? fps : profile.videoFrameRate;
+
+        //Log.i("setCamcorderProfile::", profile.toString());        
+
         mMediaRecorder.setOutputFormat(profile.fileFormat);
         mMediaRecorder.setVideoFrameRate(compatible_fps);
         mMediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
@@ -1697,8 +1704,18 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
             mMediaRecorder.setAudioEncodingBitRate(profile.audioBitRate);
             mMediaRecorder.setAudioChannels(profile.audioChannels);
             mMediaRecorder.setAudioSamplingRate(profile.audioSampleRate);
-            mMediaRecorder.setAudioEncoder(profile.audioCodec);
+            mMediaRecorder.setAudioEncoder(4); //AAC
+
+            /*
+
+            Log.i("recordAudio::true - audioCodec", String.valueOf(profile.audioCodec));
+            Log.i("recordAudio::true - audioSampleRate", String.valueOf(profile.audioSampleRate));
+            Log.i("recordAudio::true - audioBitRate", String.valueOf(profile.audioBitRate));
+            Log.i("recordAudio::true - audioChannels", String.valueOf(profile.audioChannels));
+
+            */
         }
+        
     }
 
     @Override
